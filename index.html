@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UMFF Capital Flow Map v2 - Vantage Collaborative / MMC</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#222;padding:14px;background:#fff;max-width:1100px;margin:0 auto}
+h1{font-size:16px;font-weight:700;color:#085041;margin-bottom:2px}
+.subtitle{font-size:11px;color:#888;margin-bottom:14px}
+.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px}
+.tag{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600}
+.tag.source{background:#e1f5ee;color:#085041}
+.tag.enabler{background:#fcebeb;color:#791f1f}
+.tag.intermediary{background:#eeedfe;color:#3c3489}
+.tag.destination{background:#faeeda;color:#633806}
+.rbtn{font-size:11px;padding:4px 10px;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer}
+.rbtn:hover{background:#f0f0f0}
+.srw{position:relative;margin-bottom:12px}
+.srw input{width:100%;padding:7px 11px;border:1px solid #ccc;border-radius:4px;font-size:12px;outline:none}
+.srw input:focus{border-color:#534ab7}
+.srd{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ccc;border-top:none;border-radius:0 0 6px 6px;z-index:99;max-height:240px;overflow-y:auto;display:none;box-shadow:0 6px 16px rgba(0,0,0,.14)}
+.srd.show{display:block}
+.sri{padding:8px 11px;cursor:pointer;font-size:11.5px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;gap:8px}
+.sri:hover{background:#f5f0ff}
+.sri .lvl{font-size:9.5px;color:#999;white-space:nowrap}
+.zone{margin-bottom:34px;position:relative}
+.zoneh{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.zoneh.source{color:#085041}
+.zoneh.enabler{color:#a32d2d}
+.zoneh.intermediary{color:#3c3489}
+.zoneh.destination{color:#854f0b}
+.grp{display:inline-flex;flex-direction:column;vertical-align:top;margin:0 10px 8px 0;min-width:165px}
+.grprow{display:flex;flex-wrap:wrap;align-items:flex-start;position:relative;z-index:2}
+.nc{border-radius:6px;padding:6px 9px;font-size:11px;font-weight:500;cursor:pointer;border:1.5px solid;line-height:1.3;margin-bottom:3px;transition:opacity .12s}
+.nc:hover{filter:brightness(0.97)}
+.nc.dim{opacity:.14;pointer-events:none}
+canvas{position:absolute;top:0;left:0;pointer-events:none;z-index:1}
+.flowwrap{position:relative;padding:6px 0}
+.inf{margin-top:12px;padding:13px 15px;border-radius:8px;background:#f7f7f7;border:1px solid #e0e0e0;font-size:11.5px;color:#444;line-height:1.65}
+.inf strong{color:#111;font-size:14px;display:block;margin-bottom:3px}
+.inf .lvltag{display:inline-block;font-size:9.5px;padding:2px 8px;border-radius:9px;font-weight:700;margin-bottom:7px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.fieldlabel{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#888;margin:10px 0 4px}
+.chip{background:#fff;border:1px solid #ccc;border-radius:4px;padding:3px 9px;font-size:10.5px;color:#333}
+.subchip{background:#fff;border:1px solid #ccc;border-radius:4px;padding:4px 10px;font-size:10.5px;cursor:pointer;color:#333;transition:background .12s,border-color .12s}
+.subchip:hover{background:#f0f0f0;border-color:#999}
+.subchip.sel{background:#534ab7;color:#fff;border-color:#534ab7}
+.subdetail{margin-top:9px;padding:10px 12px;background:#fff;border:1px solid #ddd;border-radius:6px;font-size:11.5px;line-height:1.65}
+.note{font-size:10.5px;background:#fffbe6;border:1px solid #ffe066;border-radius:4px;padding:4px 9px;color:#7a6000;margin-top:6px;display:inline-block}
+.ph{font-size:10.5px;color:#aaa;font-style:italic}
+.linklike{color:#185fa5;text-decoration:none}
+.footer{margin-top:18px;font-size:10px;color:#bbb;text-align:right}
+.legend-note{font-size:10px;color:#999;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<h1>UMFF capital flow map - prototype v2</h1>
+<p class="subtitle">Source &rarr; Enabler &rarr; Intermediary &rarr; Destination &middot; Vantage Collaborative for Mayors Migration Council</p>
+
+<div id="app"><div style="padding:30px;text-align:center;color:#888">Loading...</div></div>
+
+<script>
+function n(name,desc,url,aum,donors,engagement,sub,note){
+  var o={name:name,desc:desc};
+  if(url)o.url=url; if(aum)o.aum=aum; if(donors)o.donors=donors;
+  if(engagement)o.engagement=engagement; if(sub)o.sub=sub; if(note)o.note=note;
+  return o;
+}
+
+var COLORS={
+  s1:'#0F6E56', s2:'#1D9E75', s3:'#5DCAA5', s4:'#534AB7', s5:'#7F77DD',
+  s6:'#AFA9EC', s7:'#D85A30', s8:'#F0997B', s9:'#993C1D', s10:'#D4537E',
+  s11:'#185FA5', s12:'#378ADD', s13:'#639922', s14:'#27500A', s15:'#BA7517',
+  s16:'#A32D2D'
+};
+
+var S=[
+ {id:'s1',l:'MDB - Sovereign Only',color:COLORS.s1,
+  desc:'Lends only to national governments backed by a sovereign guarantee. Funds reach subnational actors only via national pass-through.',
+  i:['en-ta','en-guar','int-natgov'],d:[],
+  aum:[{t:'Combined IBRD+IDA annual commitments',v:'$66.1B',y:2023}],
+  sub:[
+   n('WB IBRD','Lends to creditworthy middle-income governments on near-market terms. No direct subnational lending window.','https://www.worldbank.org/en/who-we-are/ibrd',[{t:'Annual commitments',v:'$31.9B',y:2023}],'186 member governments','Engage via national Finance Ministries and the City Creditworthiness Initiative to position MMC member cities for eventual IBRD-backed projects.'),
+   n('WB IDA','Concessional lending to low-income countries, increasingly with climate and fragility windows.','https://ida.worldbank.org',[{t:'Annual commitments',v:'$34.2B',y:2023}],'Donor government replenishment cycle','Track IDA21 replenishment priorities for urban and displacement-relevant windows; advocate for explicit migration-inclusion criteria.')
+  ]},
+ {id:'s2',l:'MDB - Hybrid',color:COLORS.s2,
+  desc:'Lends to both sovereign and (in limited cases) non-sovereign borrowers depending on instrument and country context.',
+  i:['en-ta','en-guar','int-natgov','int-ff-sub'],d:['d-t2','d-t3'],
+  aum:[{t:'Combined annual approvals (ADB+AfDB+IsDB+EIB)',v:'~$117B',y:2023}],
+  sub:[
+   n('ADB','Strong urban climate resilience focus with growing subnational finance capacity in Asia-Pacific.','https://www.adb.org',[{t:'Annual commitments',v:'$23.6B',y:2023}],'67 member countries','Connect MMC Asia-Pacific member cities to ADB CDIA project-prep pipeline ahead of seeking ADB hybrid financing.'),
+   n('AfDB','Subnational lending remains primarily sovereign-channeled; urban resilience agenda growing.','https://www.afdb.org',[{t:'Annual approvals',v:'$11.2B',y:2023}],'81 member countries','Engage on AfDB urban resilience agenda; flag displacement-hosting cities for priority urban project pipelines.'),
+   n('IsDB','Active in fragile and conflict-affected OIC member states with refugee-hosting exposure.','https://www.isdb.org',[{t:'Annual approvals',v:'$9.8B',y:2023}],'57 OIC member countries','Priority engagement for MMC members in OIC conflict-affected and refugee-hosting contexts (Tier Four).'),
+   n('EIB','Largest multilateral lender by volume globally; significant urban climate finance, limited displacement focus to date.','https://www.eib.org',[{t:'Annual lending',v:'$72.4B',y:2023}],'EU member states','Advocate for EIB Global to adopt explicit climate-migration criteria in EU neighbourhood and partner-country urban lending.')
+  ]},
+ {id:'s3',l:'MDB - Direct',color:COLORS.s3,
+  desc:'Can lend directly to creditworthy subnational governments without a sovereign guarantee, bypassing national pass-through.',
+  i:['en-ta','en-guar','int-ff-sub'],d:['d-corp','d-t2','d-t3'],
+  aum:[{t:'Combined direct-lending capacity (CAF+EBRD+IDB pilot)',v:'~$27.6B+ annual',y:2023}],
+  sub:[
+   n('CAF','Growing direct subnational and municipal finance portfolio across Latin America.','https://www.caf.com',[{t:'Annual approvals',v:'$13.5B',y:2023}],'21 member countries (LAC + Spain/Portugal)','Direct partnership candidate for MMC LAC member cities seeking non-sovereign-guaranteed financing.'),
+   n('EBRD','Longest direct subnational lending track record among MDBs, especially Eastern Europe, MENA, and Turkey.','https://www.ebrd.com',[{t:'Annual finance',v:'$13.1B',y:2023}],'EBRD shareholder governments','Model precedent for IDB\'s new program; engage directly with EBRD Green Cities and refugee-response programming.'),
+   n('IDB','Launched a $1B Sub-Sovereign Finance Program in 2025 enabling lending without sovereign guarantees - pilot stage, modeled on EBRD.','https://www.iadb.org',[{t:'Sub-Sovereign Finance Program',v:'$1B',y:2025}],'48 member countries','Flagship engagement target: IDB for Cities and Regions pilot (first transaction: Cartagena, Colombia, Dec 2025). MMC LAC members should seek inclusion in next pilot cohort.',null,'Pilot stage - not yet a mature direct-lending window. Country eligibility requires legal/capacity roadmap.')
+  ]},
+ {id:'s4',l:'National Development Banks',color:COLORS.s4,
+  desc:'Demand-country national banks that can partner directly with subnational actors. On-lend from MDBs or operate independently.',
+  i:['int-natgov'],d:['d-t2','d-t3'],
+  aum:[],
+  sub:[
+   n('FINDETER (Colombia)','Subnational development bank channeling MDB and domestic capital to Colombian municipalities.','https://www.findeter.gov.co',[{t:'Active portfolio',v:'~$3B',y:2023}],'Colombian government, MDB co-financing','Engage on water/sanitation and urban resilience co-financing models with MDBs for Colombian member cities.'),
+   n('Banque de l\'Habitat (Tunisia)','Housing and urban development bank; key channel for subnational urban finance in Tunisia.',null,[],'Tunisian government','Explore for North Africa member city housing and urban infrastructure financing.'),
+   n('Development Bank of Ethiopia','State-owned development bank; key intermediary for subnational infrastructure in a major refugee-hosting country.',null,[],'Ethiopian government','High priority given Ethiopia\'s refugee-hosting context; explore co-financing with World Bank/IDA.'),
+   n('HDFC (India)','Housing Development Finance Corporation; subnational urban infrastructure at scale.',null,[{t:'Total assets',v:'~$70B',y:2023}],'Indian capital markets','Engage for large-scale urban housing finance precedents relevant to Tier Two/Three Indian member cities.'),
+   n('Banobras (Mexico)','National infrastructure and subnational finance bank with strong municipal lending track record.',null,[{t:'Active portfolio',v:'~$25B',y:2023}],'Mexican government','Strong existing IDB/FORTEM partnership model - study as a template for other LAC contexts.')
+  ]},
+ {id:'s5',l:'DFI - Global',color:COLORS.s5,
+  desc:'IFC is the World Bank Group\'s private sector arm. Can lend directly to creditworthy subnational and municipal-adjacent entities, including municipal corporations.',
+  i:['en-guar','int-ff-clim'],d:['d-corp','d-t2'],
+  aum:[{t:'Long-term finance committed',v:'$43.7B',y:2023}],
+  sub:[
+   n('IFC','IFC Cities Initiative targets urban infrastructure with private capital. Also deploys first-loss tranches in blended structures alongside its general lending.','https://www.ifc.org',[{t:'Long-term finance committed',v:'$43.7B',y:2023}],'World Bank Group shareholders','Engage IFC Cities Initiative directly for municipal corporation/utility financing in creditworthy MIC contexts - the most direct private-capital entry point on the map.',null,'Plays dual role: general DFI lending (here) and first-loss positioning in blended deals (Enabler-adjacent function).')
+  ]},
+ {id:'s6',l:'DFI - Bilateral',color:COLORS.s6,
+  desc:'Bilateral DFIs deploying loans, guarantees, and equity in developing markets. Displacement/migration rarely an explicit investment thesis.',
+  i:['en-ta','int-natgov','int-ff-sub'],d:['d-t2','d-t3'],
+  aum:[{t:'Combined portfolio',v:'~$133B',y:2023}],
+  sub:[
+   n('BII (UK)','Climate and urban focus growing; some Africa refugee-hosting country exposure.','https://www.bii.co.uk',[{t:'Net assets',v:'$7.6B',y:2023}],'UK government (FCDO)','Engage UK delegation on BII urban/climate strategy; advocate for displacement-inclusion criteria.'),
+   n('Proparco (France)','AFD\'s private sector arm; urban infrastructure and climate focus.','https://www.proparco.fr',[{t:'Annual commitments',v:'$2.1B',y:2023}],'French government (AFD)','Coordinate with AFD\'s broader francophone Africa subnational engagement.'),
+   n('DEG (Germany)','KfW\'s private sector arm; active in displacement-affected markets via climate lens.','https://www.deginvest.de',[{t:'Portfolio',v:'$9.5B',y:2023}],'German government (KfW)','Engage alongside BMZ/GIZ PROSPECTS Partnership coordination.'),
+   n('FMO (Netherlands)','Strong climate and financial inclusion focus; some refugee-hosting context exposure.','https://www.fmo.nl',[{t:'Portfolio',v:'$14.1B',y:2023}],'Dutch government','Engage via Dutch DGIS humanitarian-development nexus programming.'),
+   n('FinDev Canada','Climate and gender focus; LAC primary geography.','https://www.findevcanada.ca',[{t:'Portfolio',v:'$1.2B',y:2023}],'Canadian government','Smaller but growing; engage for LAC climate-migration nexus pilots.'),
+   n('DFC (US)','US bilateral DFI. Briefly lapsed in Oct 2025 shutdown; reauthorized through 2031 with expanded $205B contingent liability cap.','https://www.dfc.gov',[{t:'FY2025 new commitments',v:'$3.6B',y:2025},{t:'Total exposure',v:'$43.4B',y:2025}],'US government','Monitor DFC\'s post-reauthorization strategic priorities under new CEO Benjamin Black; advocate for "Less Developed" country eligibility relevance to MIC/LIC member cities.',null,'FY2025 activity dropped sharply from FY2024 ($12.1B) amid administration transition. New eligibility rules tie country access to income thresholds.')
+  ]},
+ {id:'s7',l:'Philanthropy - Collaborative Funds',color:COLORS.s7,
+  desc:'Pooled philanthropic vehicles aggregating multiple donors. Deploy more flexibly than bilaterals; rarely reach municipal level directly.',
+  i:['int-natgov','int-ff-sub','int-ff-mig'],d:['d-t1','d-t2','d-t3','d-t4'],
+  aum:[],sub:[],placeholder:true},
+ {id:'s8',l:'Philanthropy - HNW',color:COLORS.s8,
+  desc:'High-net-worth individual philanthropic giving. Increasingly active in climate-migration nexus.',
+  i:['int-ff-clim'],d:['d-t2','d-t3'],
+  aum:[],sub:[],placeholder:true},
+ {id:'s9',l:'Philanthropy - Family Offices',color:COLORS.s9,
+  desc:'Family office philanthropic and impact-oriented capital. Tends to work through trusted intermediaries.',
+  i:['int-ff-clim'],d:['d-t2','d-t3'],
+  aum:[],sub:[],placeholder:true},
+ {id:'s10',l:'Impact Investors',color:COLORS.s10,
+  desc:'Funds and networks seeking measurable social/environmental impact alongside financial return.',
+  i:['int-ff-clim'],d:['d-corp','d-t2','d-t3'],
+  aum:[{t:'Global impact investing market',v:'$1.164T',y:2023}],
+  sub:[
+   n('LeapFrog Investments','Emerging market impact investor; financial inclusion and climate focus.','https://leapfroginvest.com',[{t:'AUM',v:'$2B+',y:2023}],'Institutional LPs','Engage on financial inclusion programming intersecting displaced populations\' economic access.'),
+   n('Apis Partners','Financial services impact investor across Africa and Asia.','https://apispartners.com',[{t:'AUM',v:'$2.4B',y:2023}],'Institutional LPs','Engage for fintech/financial inclusion angles relevant to displaced and host community access to finance.')
+  ]},
+ {id:'s11',l:'Fund Managers',color:COLORS.s11,
+  desc:'Asset managers deploying capital into infrastructure and climate funds. Require bankable projects; cities managing displacement rarely qualify without derisking.',
+  i:['int-ff-sub','int-ff-clim'],d:['d-corp','d-t2'],
+  aum:[{t:'Global infrastructure AUM',v:'$1.3T',y:2023}],
+  sub:[
+   n('Pegasus Capital','Manages the Subnational Climate Fund targeting city-level climate finance.','https://www.pegasuscap.com',[],'Family offices, DFIs','Engage via Subnational Climate Fund for Tier Two climate-resilience infrastructure financing.'),
+   n('Meridiam','Co-manages TURF/IMIF with UNCDF and UCLG. GCF-accredited entity and co-investment partner channeling GCF capital into urban resilience infrastructure.','https://www.meridiam.com',[{t:'AUM',v:'EUR 20B',y:2023}],'GCF, EIB, institutional LPs','Top-priority private-sector partner given existing TURF/IMIF subnational mandate and direct GCF accreditation.',null,'GCF-accredited private sector partner - see Climate Finance Mechanisms (GCF) for the reciprocal connection.'),
+   n('BlackRock / Climate Finance Partnership','Largest asset manager; CFP is a blended vehicle with public/philanthropic anchor investors.','https://www.blackrock.com',[{t:'Total AUM',v:'$9.1T',y:2023},{t:'CFP fund size',v:'$673M',y:2023}],'Public and philanthropic anchors','Engage CFP specifically rather than BlackRock broadly - CFP is the relevant blended vehicle.'),
+   n('Macquarie / Green Investment Group','Leading infrastructure fund manager.','https://www.macquarie.com',[{t:'Infrastructure AUM',v:'$210B',y:2023}],'Institutional LPs','Engage Green Investment Group on urban green infrastructure financing.'),
+   n('Nuveen (TIAA)','Impact-oriented asset manager with growing emerging market infrastructure exposure.','https://www.nuveen.com',[{t:'AUM',v:'$1.1T',y:2023}],'Institutional LPs','Monitor emerging market infrastructure allocation trends for MIC engagement opportunities.')
+  ]},
+ {id:'s12',l:'Bilateral - Donors',color:COLORS.s12,
+  desc:'ODA channeled to subnational programming, primarily grant-based. Significant donor retrenchment underway in 2025-2026.',
+  i:['int-un-pass','int-un-ingo','int-natgov'],d:['d-t1','d-t2','d-t3','d-t4'],
+  aum:[{t:'Total ODA (DAC donors, excl. US)',v:'~$170B',y:2023}],
+  sub:[
+   n('FCDO (UK)','Strong humanitarian and displacement portfolio.','https://www.gov.uk/government/organisations/foreign-commonwealth-development-office',[{t:'Annual ODA (2024)',v:'GBP 14B',y:2024}],'UK government','Engage early given budget pressure - advocate for displacement programming to be protected within shrinking envelope.','','31% programme reduction by 2027 (0.5% to 0.3% of GNI). Bilateral aid to Africa falling significantly.'),
+   n('BMZ/GIZ (Germany)','Strong subnational technical assistance; PROSPECTS Partnership co-funder.','https://www.giz.de',[{t:'GIZ annual turnover',v:'EUR 4.2B',y:2023}],'German government','Leverage existing PROSPECTS relationship for UMFF positioning conversations.','','German ODA under pressure from 2025 austerity measures.'),
+   n('EU - NDICI','Largest ODA provider as a bloc; integrates migration, climate, and development.','https://international-partnerships.ec.europa.eu',[{t:'NDICI-Global Europe total',v:'EUR 79.5B',y:'2021-2027'}],'EU member states','High-priority advocacy target given explicit migration-development integration mandate.'),
+   n('Netherlands (DGIS)','Strong humanitarian-development nexus; displacement and climate explicit priorities.','https://www.government.nl',[{t:'Annual ODA',v:'EUR 5.3B',y:2023}],'Dutch government','Strong existing alignment with MMC mission; priority partner despite austerity pressure.','','ODA under pressure from Dutch austerity measures.'),
+   n('SIDA (Sweden)','Swedish development cooperation agency with strong climate and democracy programming.','https://www.sida.se',[],'Swedish government','Explore for Nordic climate-migration nexus funding alignment.'),
+   n('AICS (Italy)','Italian Agency for Development Cooperation.','https://www.aics.gov.it',[],'Italian government','Explore Mediterranean migration corridor relevance.'),
+   n('Cooperacion Espanola (Spain)','Spanish development cooperation agency.','https://www.aecid.es',[],'Spanish government','Explore LAC and Mediterranean corridor relevance given Spain\'s regional ties.')
+  ]},
+ {id:'s13',l:'Bilateral - Innovative Finance',color:COLORS.s13,
+  desc:'Bilateral donor blended and innovative finance windows using ODA to de-risk and leverage private capital at scale.',
+  i:['int-ff-sub','int-ff-clim','int-ff-mig','int-natgov'],d:['d-t2','d-t3','d-corp'],
+  aum:[],
+  sub:[
+   n('FCDO Impact Programme','UK blended finance facility; budget under pressure from UK ODA cuts.',null,[{t:'Programme size (original)',v:'GBP 735M',y:'2021-2026'}],'UK government','Verify current programme status given FCDO\'s broader 31% cut before committing engagement resources.','','FCDO ODA budget reduced 31% by 2027.'),
+   n('EU EFSD+','EU blended finance guarantee mechanism; climate, migration, and private investment nexus.','https://international-partnerships.ec.europa.eu',[{t:'Guarantee envelope',v:'EUR 40B',y:'2021-2027'}],'EU member states','High-priority target given explicit migration nexus mandate within guarantee criteria.'),
+   n('ALTERRA (UAE)','$250B UAE-anchored climate investment platform; Transformation Fund provides catalytic capital for developing markets.','https://www.alterraclimate.com',[{t:'Total commitment',v:'$250B',y:'2030 horizon'}],'UAE sovereign capital, COP28 partners','Major emerging capital pool; engage early on climate-migration nexus inclusion before allocation priorities solidify.')
+  ]},
+ {id:'s14',l:'Climate Finance Mechanisms',color:COLORS.s14,
+  desc:'Dedicated multilateral climate finance vehicles. Most flow through national entities; direct municipal access limited but growing.',
+  i:['int-natgov','int-ff-clim','int-ff-mig'],d:['d-t1','d-t2','d-t3','d-t4'],
+  aum:[],
+  sub:[
+   n('Green Climate Fund (GCF)','Largest dedicated climate fund. Direct access modality available for some subnational entities; partners directly with private sector via accredited entities like Meridiam.','https://www.greenclimate.fund',[{t:'Total pledges',v:'$13.5B',y:2023},{t:'Annual approvals',v:'$1.8B',y:2023}],'194 UNFCCC Parties','Pursue GCF accreditation pathway for MMC or partner with existing accredited entities (e.g. Meridiam) for faster access.',null,'Only multilateral climate fund that partners directly with the private sector; see Meridiam connection.'),
+   n('GEF','Oldest multilateral climate fund.','https://www.thegef.org',[{t:'GEF-8 replenishment',v:'$5.3B',y:'2022-2026'}],'GEF Council member states','Engage on GEF-8 Sustainable Cities window.',null,'World Bank serves as GEF\'s Trustee and one of its Accredited Implementing Agencies - GEF holds the capital and makes funding decisions; World Bank often delivers implementation.'),
+   n('Adaptation Fund','Climate adaptation focus; most accessible for subnational entities via direct access modality.','https://www.adaptation-fund.org',[{t:'Total pledges',v:'$1.3B',y:2023}],'Kyoto Protocol/Paris Agreement Parties','Most accessible climate fund for direct subnational engagement - priority target.'),
+   n('Climate Investment Funds (CIF)','World Bank-housed; urban climate resilience a growing priority.','https://www.cif.org',[{t:'Total pledges',v:'$11B+',y:2023}],'Donor government contributors','Engage on urban resilience window relevance to displacement-affected cities.'),
+   n('Loss and Damage Fund','Nascent fund from COP27/28; displacement explicitly included in mandate.','https://unfccc.int/loss-and-damage-fund',[{t:'Initial pledges',v:'~$700M',y:2023}],'COP28 pledging governments','High strategic priority - displacement is explicitly named in the fund\'s mandate, a rare direct hook for MMC advocacy.'),
+   n('GCCM Communities Climate Action Fund','Pools bilateral and philanthropic contributions under independent governance; makes its own funding decisions for community-level climate projects.',null,[],'Bilateral and philanthropic donors','Direct engagement target given community/local project focus aligned with MMC\'s subnational mission.')
+  ]},
+ {id:'s15',l:'Diaspora Capital',color:COLORS.s15,
+  desc:'Remittances and diaspora investment vehicles. Largest private financial flow to many displacement-affected countries; largely informal and undercaptured by development finance.',
+  i:['int-natgov'],d:['d-t1','d-t2','d-t3','d-t4'],
+  aum:[{t:'Global remittances to LMICs',v:'$669B',y:2023}],
+  sub:[],placeholder:true},
+ {id:'s16',l:'Parametric Insurance',color:COLORS.s16,
+  desc:'Risk pools that pay out directly to governments after a triggering disaster event, providing immediate fiscal liquidity. Function as a direct capital source, not a credit enhancer for third-party lenders.',
+  i:['int-natgov'],d:['d-t3','d-t4'],
+  aum:[],
+  sub:[
+   n('CCRIF SPC','Caribbean Catastrophe Risk Insurance Facility; parametric payouts for Caribbean and Central American governments.','https://www.ccrif.org',[{t:'Claims paid to date',v:'$280M+',y:2023}],'CARICOM governments, donor capitalization','Engage CARICOM member cities on rapid post-disaster liquidity access pathways.'),
+   n('PCRIC','Pacific Catastrophe Risk Insurance Company; parametric risk pooling for Pacific island nations.',null,[],'Pacific Island governments','Relevant for Pacific member cities facing climate displacement risk.'),
+   n('ARC Ltd.','African Risk Capacity; parametric drought and climate risk insurance for African Union member states.','https://www.africanriskcapacity.org',[{t:'Total coverage',v:'~$800M',y:2023}],'African Union member states','Engage on drought-displacement linkage in Sahel and Horn of Africa member city contexts.')
+  ]}
+];
+
+var EN=[
+ {id:'en-guar',l:'Guarantees / Credit Enhancements',color:'#A32D2D',
+  desc:'De-risk third-party lending without directly funding projects. Subnational governments currently receive a very small share of these guarantees.',
+  d:['d-corp','d-t2','d-t3'],
+  aum:[],
+  sub_:[
+   n('MIGA','World Bank Group\'s political risk insurance and credit enhancement arm.','https://www.miga.org',[{t:'Gross exposure',v:'$27.4B',y:2023}],'World Bank Group shareholders','Advocate for expanded subnational guarantee allocation - currently a very small share of total exposure.',null,'Subnational governments receive a very small share of MIGA\'s guarantees today (Penn IUR/SDSN Green Cities Guarantee Fund analysis).'),
+   n('GuarantCo','Local currency partial credit guarantees for infrastructure, part of the Private Infrastructure Development Group.','https://guarantco.com',[{t:'Cumulative guarantees issued (since 2005)',v:'$1.9B+',y:2022}],'UK, Switzerland, Australia, Sweden, Netherlands (via PIDG/FMO)','Engage on municipal infrastructure guarantee eligibility - GuarantCo can in certain circumstances support municipalities and sub-nationals directly.',null,'Subnational governments receive a very small share of GuarantCo\'s guarantees today (Penn IUR/SDSN Green Cities Guarantee Fund analysis).')
+  ]},
+ {id:'en-ta',l:'Technical Assistance',color:'#854F0B',
+  desc:'Build capacity, project pipelines, and creditworthiness without deploying capital directly.',
+  d:['d-t2','d-t3'],
+  aum:[],
+  sub_:[
+   n('ADB CDIA','Cities Development Initiative for Asia. Technical assistance and investment preparation for Asian cities.','https://cdia.asia',[{t:'Portfolio facilitated',v:'$3.2B+',y:2023}],'ADB, bilateral donors','Direct partnership target for MMC Asia-Pacific member cities seeking project-prep support ahead of MDB engagement.'),
+   n('World Bank City Creditworthiness Initiative','Hands-on, long-term support helping cities strengthen financial performance and access financing, including City Creditworthiness Academies and the Local Government Borrowing Database.','https://www.worldbank.org/en/topic/urbandevelopment/brief/city-creditworthiness-initiative',[],'World Bank Group','High-value engagement target - explore whether MMC member cities can access CCI Academies and the LGBD database directly.')
+  ]},
+ {id:'en-firstloss',l:'First-Loss Capital',color:'#3C3489',
+  desc:'Philanthropic capital positioned to absorb downside risk first, unlocking commercial co-investment above it in a blended structure.',
+  d:['d-t2','d-t3'],
+  aum:[],
+  sub_:[
+   n('MacArthur Foundation / CCC','Pioneer in catalytic capital; co-leads the Catalytic Capital Consortium with Omidyar and Rockefeller.','https://www.macfound.org',[{t:'Catalytic capital commitment',v:'$150M',y:2019}],'MacArthur, Omidyar Network, Rockefeller Foundation','Engage CCC on developing a displacement-specific catalytic capital vehicle modeled on existing CCC structures.'),
+   n('Rockefeller Foundation - Innovative Finance','Deploys innovative finance instruments including guarantees and outcomes-based finance for urban resilience and climate.','https://www.rockefellerfoundation.org',[{t:'Annual grants',v:'~$300M',y:2023}],'Rockefeller Foundation endowment','Strong existing relationship to urban resilience work; priority partner for first-loss structuring conversations.')
+  ]}
+];
+
+var I=[
+ {id:'int-un-pass',l:'UN Agencies - Pass-through/Pooled',color:'#3C3489',
+  desc:'Pooled funds administered by or linked to UN agencies, aggregating donor capital for implementing partners. Often channels through national governments before reaching subnational actors.',
+  d:['d-t1','d-t2','d-t3','d-t4'],
+  i2i:['int-natgov'],
+  aum:[],
+  sub:[
+   n('CERF','UN Central Emergency Response Fund; rapid-response humanitarian capital.','https://cerf.un.org',[{t:'Annual disbursements',v:'~$700M',y:2023}],'UN member states','Track for rapid post-disaster displacement response funding.'),
+   n('UN Migration MPTF','Dedicated multi-partner trust fund for migration programming.',null,[{t:'Capitalisation',v:'~$50M',y:2023}],'UN member state donors','Direct engagement target given explicit migration mandate.'),
+   n('MPTF Office','Hosts and administers multi-partner trust funds across the UN system.','https://mptf.undp.org',[{t:'Active portfolio',v:'$12.8B',y:2023}],'UN member states, multiple agencies','Engage on structuring a dedicated MMC/UMFF-linked trust fund vehicle.')
+  ]},
+ {id:'int-un-ingo',l:'INGOs / Civil Society',color:'#AFA9EC',
+  desc:'Receive bilateral and philanthropic funding to deliver subnational programming. Closest to municipal actors but rarely hold capital for on-lending.',
+  d:['d-t1','d-t2','d-t3','d-t4'],
+  aum:[],
+  sub:[
+   n('IRC','Urban displacement and economic inclusion programming at city level.','https://www.rescue.org',[{t:'Annual budget',v:'$1.1B',y:2023}],'Bilateral, philanthropic donors','Engage on joint city-level economic inclusion programming.'),
+   n('NRC','Shelter, legal aid, and urban displacement programming.','https://www.nrc.no',[{t:'Annual budget',v:'$1.0B',y:2023}],'Bilateral, philanthropic donors','Engage on shelter/housing programming alignment with municipal infrastructure planning.'),
+   n('Oxfam','Humanitarian and development programming; urban resilience in displacement contexts.','https://www.oxfam.org',[{t:'Annual income',v:'GBP 1.2B',y:2023}],'Bilateral, philanthropic, public donors','Engage on urban resilience programming overlap.'),
+   n('CARE International','Urban livelihoods and displacement programming.','https://www.care-international.org',[{t:'Annual budget',v:'$800M',y:2023}],'Bilateral, philanthropic donors','Engage on livelihoods programming alignment.')
+  ]},
+ {id:'int-ff-sub',l:'Finance Facilities - Subnational Focus',color:'#0F6E56',
+  desc:'Purpose-built vehicles for city-level capital deployment. Target creditworthy municipalities; limited displacement lens to date.',
+  d:['d-corp','d-t2','d-t3'],
+  aum:[],
+  sub:[
+   n('TURF / IMIF','The Urban Resilience Fund / Inclusive Municipal Infrastructure Facility. Co-managed by Meridiam, UNCDF, and UCLG. Includes a EUR 20m catalytic capital fund for project preparation plus separate OECD and non-OECD (Africa) investment funds.','https://www.meridiam.com',[{t:'Target capitalisation',v:'$500M',y:'ongoing'}],'Meridiam, UNCDF, UCLG, EIB','High-priority structural model for UMFF - study TURF\'s three-part architecture (catalytic + two regional funds) directly.'),
+   n('ICLEI TAP','Transformative Actions Program. Connects local governments with project preparation support and investment opportunities; does not directly fund or invest.','https://www.iclei.org',[{t:'Annual mobilisation',v:'~$200M',y:2023}],'ICLEI, Cities Alliance, multiple partners','Important structural and functional precedent for UMFF - a near-direct model for pipeline origination, capital facilitation, and convening. Explore partnership vs. build-separate question directly.',null,'TAP closely parallels UMFF\'s intended Pipeline Origination and Capital Facilitation functions, but lacks an explicit migration/displacement lens - the white space UMFF would fill.'),
+   n('ADB CDIA','Technical assistance and investment preparation for Asian cities (also listed under Enablers - Technical Assistance).','https://cdia.asia',[{t:'Portfolio facilitated',v:'$3.2B+',y:2023}],'ADB, bilateral donors','See Enabler - Technical Assistance entry for engagement detail.'),
+   n('AFD Subnational Facility','Direct subnational lending in francophone Africa and Latin America.',null,[{t:'Annual subnational commitments',v:'~$1.5B',y:2023}],'AFD (French government)','Engage on francophone Africa displacement-hosting city financing.')
+  ]},
+ {id:'int-ff-clim',l:'Finance Facilities - Climate Focus',color:'#1D9E75',
+  desc:'Climate-focused blended vehicles; growing entry point for climate mobility framing. Several lend primarily to national governments, which then channel funds to subnational actors.',
+  d:['d-corp','d-t2','d-t3'],
+  i2i:['int-natgov'],
+  aum:[],
+  sub:[
+   n('GEAPP','Global Energy Alliance for People and Planet. Clean energy access with climate and displacement-adjacent programming.','https://www.energyalliance.org',[{t:'Committed capital',v:'$10.5B',y:2023}],'Bezos Earth Fund, IKEA Foundation, Rockefeller Foundation, others','Engage on energy access programming intersecting displacement-hosting cities.'),
+   n('C40 Cities Finance Facility','Finance preparation and transaction support for city climate projects.','https://www.c40.org',[{t:'Finance facilitated',v:'$2.1B+',y:2023}],'C40, multiple donor governments','Explore coordination given overlapping city-network membership with MMC.'),
+   n('Subnational Climate Fund','Pegasus Capital-managed fund targeting city-level climate finance.',null,[{t:'Target',v:'$500M',y:'ongoing'}],'Pegasus Capital, institutional LPs','See Pegasus Capital (Fund Managers) for the source-side relationship.'),
+   n('ALTERRA Transformation Fund','UAE-anchored catalytic capital for climate transition in developing markets.','https://www.alterraclimate.com',[{t:'Fund commitment',v:'$25B',y:'2030 horizon'}],'UAE sovereign capital','Major emerging capital pool; engage early on climate-migration inclusion.')
+  ]},
+ {id:'int-ff-mig',l:'Finance Facilities - Refugee/Migration Focus',color:'#7F77DD',
+  desc:'Nascent category with very limited capital volume; proof-of-concept stage. Key white space in the ecosystem and most directly relevant to MMC\'s mission. Several (notably GCFF) lend primarily to national governments.',
+  d:['d-t1','d-t2','d-t3','d-t4'],
+  i2i:['int-natgov'],
+  aum:[],
+  sub:[
+   n('GCFF','Global Concessional Financing Facility. World Bank-administered; blends donor contributions with IBRD loans to reduce borrowing costs for middle-income refugee-hosting countries.','https://www.worldbank.org/en/programs/globalconcessionalfinancingfacility',[{t:'Total contributions',v:'~$250M',y:2023}],'World Bank, EU, bilateral donors','Top-priority engagement target - the closest existing precedent to UMFF\'s intended function, though designed for MIC refugee-hosting countries specifically (not LIC or conflict-affected).'),
+   n('KOIS Refugee Impact Bond','Social impact bond for refugee livelihoods; proof-of-concept for outcomes-based finance in displacement.',null,[{t:'Pilot size',v:'~$20M',y:2022}],'KOIS, philanthropic and DFI co-investors','Study as an outcomes-based finance model for future UMFF instrument design.'),
+   n('PROSPECTS Partnership','EU/Netherlands/IFC/ILO/UNHCR/WB partnership for displacement programming in Middle East and Africa.','https://www.prospects-partnership.org',[{t:'Total budget',v:'EUR 195M',y:'2019-2025'}],'EU, Netherlands, IFC, ILO, UNHCR, World Bank','Engage on lessons learned as the partnership approaches its 2025 conclusion; explore successor mechanism positioning for UMFF.'),
+   n('GCMF','Global Climate Mobility Investment Facility. IOM\'s emerging multi-window platform (Window A: technical assistance/pipeline; Window B: sovereign lending via MDB/DFI concessional finance; Window C: private capital mobilization).','https://www.iom.int',[],'IOM, EU (pilot funding), prospective MDB/DFI partners','Second major structural precedent for UMFF alongside ICLEI TAP - more directly comparable given explicit climate mobility investment framing. Explore partnership vs. parallel-build question directly with IOM.',null,'GCMF aims to become the world\'s first dedicated global financing platform focused on climate mobility - closely watch as it develops given near-direct overlap with UMFF\'s ambition.')
+  ]},
+ {id:'int-natgov',l:'National Governments',color:'#854F0B',
+  desc:'Primary conduit for MDB sovereign lending to cities via intergovernmental transfers. Also receives funding from other intermediaries (e.g. climate finance facilities that lend primarily to sovereigns) before passing to subnational actors. Variable reliability for subnational actors; routing depends on capital type.',
+  d:['d-t1','d-t2','d-t3','d-t4','d-corp'],
+  aum:[],
+  sub:[
+   n('Finance Ministry','Holds sovereign borrowing relationships with MDBs and controls intergovernmental transfer systems. Can issue sovereign guarantees to backstop subnational borrowing.',null,[],'MDBs, bilateral lenders','Primary engagement point for sovereign-guaranteed capital pathways; advocate for transparent intergovernmental transfer mechanisms benefiting displacement-hosting cities.'),
+   n('Line Ministries','Sector ministries (Urban/Housing, Migration/Interior, Planning, Water, Transport) that may receive sector-specific or displacement-related funding directly, bypassing Finance.',null,[],'Sector-specific donors and lenders','Routing varies by funding type - urban/housing for infrastructure, migration/interior for displacement-specific programming. Map relevant line ministry per country context.')
+  ]}
+];
+
+var D=[
+ {id:'d-corp',l:'Municipal Corporations/Enterprises',color:'#854F0B',
+  desc:'Utilities, transit agencies, and parastatal entities with ring-fenced revenue streams (tariffs, fares). Can access commercial finance even where the parent municipality cannot, due to distinct revenue model and borrowing capacity.'},
+ {id:'d-t1',l:'Tier One Municipalities',color:'#FAC775',desc:'HIC, strong creditworthiness. Broadest access to commercial, multilateral, and institutional capital.'},
+ {id:'d-t2',l:'Tier Two Municipalities',color:'#EF9F27',desc:'LIC/MIC, strong creditworthiness. Reachable by DFIs, subnational finance facilities, and direct-lending MDBs.'},
+ {id:'d-t3',l:'Tier Three Municipalities',color:'#BA7517',desc:'LIC/MIC, weak creditworthiness. Requires significant derisking, guarantees, or TA before commercial/MDB engagement is viable.'},
+ {id:'d-t4',l:'Tier Four Municipalities',color:'#854F0B',desc:'Conflict-affected. Capital markets effectively closed; humanitarian channels and UN/INGO intermediaries dominate.'}
+];
+
+function init(){
+  document.getElementById('app').innerHTML=
+    '<div class="bar">'+
+      '<div style="display:flex;gap:6px;align-items:center">'+
+        '<span class="tag source">Source</span><span class="tag enabler">Enabler</span><span class="tag intermediary">Intermediary</span><span class="tag destination">Destination</span>'+
+      '</div>'+
+      '<button class="rbtn" id="rbtn">Reset</button>'+
+    '</div>'+
+    '<div class="srw"><input type="text" id="srch" placeholder="Search any actor (e.g. IDB, GCF, Meridiam, Tier Two)..."><div class="srd" id="srd"></div></div>'+
+    '<div class="legend-note">Lines are colored by their originating Source category. Click a category or named actor to trace its full path; click again to clear.</div>'+
+    '<div class="flowwrap" id="flowwrap"><canvas id="cv"></canvas>'+
+    '<div class="zone" id="z-source"><div class="zoneh source">Source</div><div class="grprow" id="g-source"></div></div>'+
+    '<div class="zone" id="z-enabler"><div class="zoneh enabler">Enabler</div><div class="grprow" id="g-enabler"></div></div>'+
+    '<div class="zone" id="z-intermediary"><div class="zoneh intermediary">Intermediary</div><div class="grprow" id="g-intermediary"></div></div>'+
+    '<div class="zone" id="z-destination"><div class="zoneh destination">Destination</div><div class="grprow" id="g-destination"></div></div>'+
+    '</div>'+
+    '<div class="inf" id="inf">Click any category or named actor, or search above, to trace its place in the capital flow.</div>'+
+    '<div class="footer">Vantage Collaborative LLC for Mayors Migration Council - Prototype v2</div>';
+
+  var act=null,atype=null,curNode=null;
+
+  function findNode(id,type){
+    if(type==='s')return S.find(function(x){return x.id===id;});
+    if(type==='en')return EN.find(function(x){return x.id===id;});
+    if(type==='int')return I.find(function(x){return x.id===id;});
+    if(type==='d')return D.find(function(x){return x.id===id;});
+  }
+
+  function gc(id,tp){
+    if(tp==='s'){
+      var node=findNode(id,'s');
+      var intIds=node.i.filter(function(x){return x.indexOf('int-')===0;});
+      // Expand to include any intermediary-to-intermediary targets
+      var expanded=intIds.slice();
+      intIds.forEach(function(iid){
+        var iNode=findNode(iid,'int');
+        if(iNode&&iNode.i2i){iNode.i2i.forEach(function(t){if(expanded.indexOf(t)<0)expanded.push(t);});}
+      });
+      return {s:[id],en:node.i.filter(function(x){return x.indexOf('en-')===0;}),int:expanded,d:node.d,color:node.color};
+    }
+    if(tp==='en'){
+      var node=findNode(id,'en');
+      var sIds=S.filter(function(s){return s.i.indexOf(id)>=0;}).map(function(s){return s.id;});
+      return {s:sIds,en:[id],int:[],d:node.d,color:node.color};
+    }
+    if(tp==='int'){
+      var node=findNode(id,'int');
+      var sIds=S.filter(function(s){return s.i.indexOf(id)>=0;}).map(function(s){return s.id;});
+      var intIds=[id];
+      if(node.i2i){node.i2i.forEach(function(t){if(intIds.indexOf(t)<0)intIds.push(t);});}
+      // Also include any intermediary that lists this one as an i2i target (upstream view)
+      I.forEach(function(other){
+        if(other.i2i&&other.i2i.indexOf(id)>=0&&intIds.indexOf(other.id)<0)intIds.push(other.id);
+      });
+      var dIds=node.d.slice();
+      intIds.forEach(function(iid){
+        var iNode=findNode(iid,'int');
+        if(iNode){iNode.d.forEach(function(did){if(dIds.indexOf(did)<0)dIds.push(did);});}
+      });
+      return {s:sIds,en:[],int:intIds,d:dIds,color:node.color};
+    }
+    if(tp==='d'){
+      var sIds=S.filter(function(s){return s.d.indexOf(id)>=0;}).map(function(s){return s.id;});
+      var enIds=EN.filter(function(e){return e.d.indexOf(id)>=0;}).map(function(e){return e.id;});
+      var intIds=I.filter(function(i){return i.d.indexOf(id)>=0;}).map(function(i){return i.id;});
+      // Include upstream intermediaries that feed into these via i2i
+      I.forEach(function(other){
+        if(other.i2i&&other.i2i.some(function(t){return intIds.indexOf(t)>=0;})&&intIds.indexOf(other.id)<0){
+          intIds.push(other.id);
+        }
+      });
+      return {s:sIds,en:enIds,int:intIds,d:[id],color:'#854F0B'};
+    }
+    return {s:[],en:[],int:[],d:[]};
+  }
+
+  function mk(tag,cls,id,html,fn,style){
+    var el=document.createElement(tag);
+    el.className=cls; if(id)el.id=id; el.innerHTML=html;
+    if(style)el.setAttribute('style',style);
+    if(fn)el.onclick=fn;
+    return el;
+  }
+
+  function rndr(){
+    ['g-source','g-enabler','g-intermediary','g-destination'].forEach(function(id){document.getElementById(id).innerHTML='';});
+    S.forEach(function(s){
+      var grp=mk('div','grp',null,'');
+      var lbl=s.l+(s.placeholder?' (TBD)':'');
+      var st='background:'+s.color+'18;border-color:'+s.color+';color:'+s.color;
+      grp.appendChild(mk('div','nc','n-'+s.id,lbl,function(){sel(s.id,'s',s);},st));
+      document.getElementById('g-source').appendChild(grp);
+    });
+    EN.forEach(function(e){
+      var grp=mk('div','grp',null,'');
+      var st='background:'+e.color+'18;border-color:'+e.color+';color:'+e.color;
+      grp.appendChild(mk('div','nc','n-'+e.id,e.l,function(){sel(e.id,'en',e);},st));
+      document.getElementById('g-enabler').appendChild(grp);
+    });
+    I.forEach(function(i){
+      var grp=mk('div','grp',null,'');
+      var st='background:'+i.color+'18;border-color:'+i.color+';color:'+i.color;
+      grp.appendChild(mk('div','nc','n-'+i.id,i.l,function(){sel(i.id,'int',i);},st));
+      document.getElementById('g-intermediary').appendChild(grp);
+    });
+    D.forEach(function(d){
+      var grp=mk('div','grp',null,'');
+      var st='background:'+d.color+'18;border-color:'+d.color+';color:'+d.color;
+      grp.appendChild(mk('div','nc','n-'+d.id,d.l,function(){sel(d.id,'d',d);},st));
+      document.getElementById('g-destination').appendChild(grp);
+    });
+    szc();
+  }
+
+  function szc(){
+    var fw=document.getElementById('flowwrap');
+    var cv=document.getElementById('cv');
+    cv.width=fw.offsetWidth*2; cv.height=fw.offsetHeight*2;
+    cv.style.width=fw.offsetWidth+'px'; cv.style.height=fw.offsetHeight+'px';
+  }
+
+  function ncbox(id){
+    var el=document.getElementById('n-'+id);
+    if(!el)return null;
+    var fw=document.getElementById('flowwrap');
+    var er=el.getBoundingClientRect(),fr=fw.getBoundingClientRect();
+    return {
+      left:(er.left-fr.left)*2, right:(er.right-fr.left)*2,
+      top:(er.top-fr.top)*2, bottom:(er.bottom-fr.top)*2,
+      cx:(er.left+er.width/2-fr.left)*2, cy:(er.top+er.height/2-fr.top)*2
+    };
+  }
+
+  function zoneBottom(zoneId){
+    var el=document.getElementById(zoneId);
+    var fw=document.getElementById('flowwrap');
+    var er=el.getBoundingClientRect(),fr=fw.getBoundingClientRect();
+    return (er.bottom-fr.top)*2;
+  }
+  function zoneTop(zoneId){
+    var el=document.getElementById(zoneId);
+    var fw=document.getElementById('flowwrap');
+    var er=el.getBoundingClientRect(),fr=fw.getBoundingClientRect();
+    return (er.top-fr.top)*2;
+  }
+
+  function routeThroughGap(ctx,b1,b2,gapY,color,laneOffset){
+    var x1=b1.cx, y1=b1.bottom;
+    var x2=b2.cx, y2=b2.top;
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    ctx.bezierCurveTo(x1,(y1+y2)/2,x2,(y1+y2)/2,x2,y2);
+    ctx.strokeStyle=color;ctx.lineWidth=3;ctx.globalAlpha=0.62;ctx.lineJoin='round';ctx.stroke();ctx.globalAlpha=1;
+  }
+
+  function redraw(c){
+    szc();
+    var cv=document.getElementById('cv');
+    var ctx=cv.getContext('2d');
+    ctx.clearRect(0,0,cv.width,cv.height);
+    var color=c.color||'#888';
+
+    var gapSE=(zoneBottom('z-source')+zoneTop('z-enabler'))/2;
+    var gapSI=zoneBottom('z-source')+14;
+    var gapID=(zoneBottom('z-intermediary')+zoneTop('z-destination'))/2;
+    var gapSD=zoneBottom('z-source')+26;
+    var gapED=zoneBottom('z-enabler')+14;
+
+    c.s.forEach(function(sid){
+      var sNode=findNode(sid,'s');
+      var b1=ncbox(sid); if(!b1)return;
+      var col=sNode.color||color;
+      var lane=0;
+      sNode.i.forEach(function(target){
+        var tp=target.indexOf('en-')===0?'en':'int';
+        if(tp==='en'&&c.en.indexOf(target)<0)return;
+        if(tp==='int'&&c.int.indexOf(target)<0)return;
+        var b2=ncbox(target); if(!b2)return;
+        var gap=tp==='en'?gapSE:gapSI;
+        routeThroughGap(ctx,b1,b2,gap,col,lane*5);
+        lane++;
+      });
+      sNode.d.forEach(function(did){
+        if(c.d.indexOf(did)<0)return;
+        var b2=ncbox(did); if(!b2)return;
+        routeThroughGap(ctx,b1,b2,gapSD+(lane*4),col,0);
+        lane++;
+      });
+    });
+
+    c.en.forEach(function(eid){
+      var eNode=findNode(eid,'en');
+      var b1=ncbox(eid); if(!b1)return;
+      var lane=0;
+      eNode.d.forEach(function(did){
+        if(c.d.indexOf(did)<0)return;
+        var b2=ncbox(did); if(!b2)return;
+        routeThroughGap(ctx,b1,b2,gapED,eNode.color,lane*4);
+        lane++;
+      });
+    });
+
+    c.int.forEach(function(iid){
+      var iNode=findNode(iid,'int');
+      var b1=ncbox(iid); if(!b1)return;
+      var lane=0;
+      iNode.d.forEach(function(did){
+        if(c.d.indexOf(did)<0)return;
+        var b2=ncbox(did); if(!b2)return;
+        routeThroughGap(ctx,b1,b2,gapID,iNode.color,lane*4);
+        lane++;
+      });
+      // Draw intermediary-to-intermediary connections as a same-row arc
+      if(iNode.i2i){
+        iNode.i2i.forEach(function(targetId){
+          if(c.int.indexOf(targetId)<0)return;
+          var b2=ncbox(targetId); if(!b2)return;
+          var midY=Math.min(b1.top,b2.top)-22;
+          ctx.beginPath();
+          ctx.moveTo(b1.cx,b1.top);
+          ctx.bezierCurveTo(b1.cx,midY,b2.cx,midY,b2.cx,b2.top);
+          ctx.strokeStyle=iNode.color;ctx.lineWidth=2.5;ctx.globalAlpha=0.55;ctx.setLineDash([6,4]);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+        });
+      }
+    });
+  }
+
+  function bldInf(node,level){
+    var tagcls={s:'source',en:'enabler',int:'intermediary',d:'destination'}[level];
+    var tagtxt={s:'Source',en:'Enabler',int:'Intermediary',d:'Destination'}[level];
+    var h='<span class="lvltag tag '+tagcls+'">'+tagtxt+'</span>';
+    h+='<strong>'+node.l+'</strong>';
+    if(node.desc)h+='<span style="color:#666">'+node.desc+'</span>';
+    if(node.note)h+='<br><span class="note">! '+node.note+'</span>';
+    if(node.i2i&&node.i2i.length){
+      var targets=node.i2i.map(function(tid){var t=I.find(function(x){return x.id===tid;});return t?t.l:tid;}).join(', ');
+      h+='<div class="fieldlabel">Passes funds to</div><div class="row"><span class="chip">'+targets+'</span></div>';
+    }
+    var upstreamI=I.filter(function(other){return other.i2i&&other.i2i.indexOf(node.id)>=0;});
+    if(upstreamI.length){
+      var sources=upstreamI.map(function(x){return x.l;}).join(', ');
+      h+='<div class="fieldlabel">Receives funds from</div><div class="row"><span class="chip">'+sources+'</span></div>';
+    }
+    var aum=node.aum||[];
+    if(aum.length){h+='<div class="fieldlabel">Estimated capital available</div><div class="row">';aum.forEach(function(a){h+='<span class="chip">'+a.t+': <b>'+a.v+'</b> ('+a.y+')</span>';});h+='</div>';}
+    var subs=node.sub||node.sub_;
+    if(subs&&subs.length){
+      h+='<div class="fieldlabel">Named entities - click for details</div><div class="row" id="srl">';
+      subs.forEach(function(s,idx){h+='<span class="subchip" data-idx="'+idx+'">'+s.name+'</span>';});
+      h+='</div><div id="sdt"></div>';
+    } else if(node.placeholder){
+      h+='<div class="ph">Named entities to be populated.</div>';
+    }
+    return h;
+  }
+
+  function sel(id,tp,node){
+    if(act===id){rst();return;}
+    act=id;atype=tp;curNode=node;
+    var c=gc(id,tp);
+    S.forEach(function(s){var el=document.getElementById('n-'+s.id);if(!el)return;el.classList.toggle('dim',c.s.indexOf(s.id)<0);});
+    EN.forEach(function(e){var el=document.getElementById('n-'+e.id);if(!el)return;el.classList.toggle('dim',c.en.indexOf(e.id)<0);});
+    I.forEach(function(i){var el=document.getElementById('n-'+i.id);if(!el)return;el.classList.toggle('dim',c.int.indexOf(i.id)<0);});
+    D.forEach(function(d){var el=document.getElementById('n-'+d.id);if(!el)return;el.classList.toggle('dim',c.d.indexOf(d.id)<0);});
+    document.getElementById('inf').innerHTML=bldInf(node,tp);
+    var srl=document.getElementById('srl');
+    if(srl){srl.querySelectorAll('.subchip').forEach(function(chip){chip.onclick=function(){shwSub(parseInt(chip.getAttribute('data-idx')));};});}
+    setTimeout(function(){redraw(c);},60);
+  }
+
+  function shwSub(idx){
+    var subs=curNode.sub||curNode.sub_;
+    if(!subs)return;
+    var s=subs[idx]; if(!s)return;
+    document.querySelectorAll('.subchip').forEach(function(el){el.classList.remove('sel');});
+    var chip=document.querySelector('[data-idx="'+idx+'"]');
+    if(chip)chip.classList.add('sel');
+    var h='<div class="subdetail"><strong style="display:block;margin-bottom:3px">'+s.name;
+    if(s.url)h+=' <a class="linklike" href="'+s.url+'" target="_blank" rel="noopener" style="font-size:10.5px">'+s.url.replace('https://','').replace('http://','')+'</a>';
+    h+='</strong>'+s.desc;
+    if(s.note)h+='<br><span class="note">! '+s.note+'</span>';
+    if(s.aum&&s.aum.length){h+='<div class="fieldlabel">Estimated capital available</div><div class="row">';s.aum.forEach(function(a){h+='<span class="chip">'+a.t+': <b>'+a.v+'</b> ('+a.y+')</span>';});h+='</div>';}
+    if(s.donors){h+='<div class="fieldlabel">Actors/donors involved</div><div class="row"><span class="chip">'+s.donors+'</span></div>';}
+    if(s.engagement){h+='<div class="fieldlabel">Recommended MMC engagement</div><div style="margin-top:3px">'+s.engagement+'</div>';}
+    h+='</div>';
+    document.getElementById('sdt').innerHTML=h;
+  }
+
+  function rst(){
+    act=null;atype=null;curNode=null;
+    document.querySelectorAll('.nc').forEach(function(el){el.classList.remove('dim');});
+    document.getElementById('inf').textContent='Click any category or named actor, or search above, to trace its place in the capital flow.';
+    document.getElementById('srch').value='';
+    document.getElementById('srd').innerHTML='';document.getElementById('srd').classList.remove('show');
+    var cv=document.getElementById('cv');
+    if(cv){var ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);}
+  }
+
+  var IDX=[];
+  S.forEach(function(s){
+    IDX.push({id:s.id,tp:'s',label:s.l,node:s,match:s.l.toLowerCase(),lvl:'Source'});
+    (s.sub||[]).forEach(function(x,idx){IDX.push({id:s.id,tp:'s',label:x.name+' ('+s.l+')',node:s,match:x.name.toLowerCase(),subIdx:idx,lvl:'Source actor'});});
+  });
+  EN.forEach(function(e){
+    IDX.push({id:e.id,tp:'en',label:e.l,node:e,match:e.l.toLowerCase(),lvl:'Enabler'});
+    (e.sub_||[]).forEach(function(x,idx){IDX.push({id:e.id,tp:'en',label:x.name+' ('+e.l+')',node:e,match:x.name.toLowerCase(),subIdx:idx,lvl:'Enabler actor'});});
+  });
+  I.forEach(function(i){
+    IDX.push({id:i.id,tp:'int',label:i.l,node:i,match:i.l.toLowerCase(),lvl:'Intermediary'});
+    (i.sub||[]).forEach(function(x,idx){IDX.push({id:i.id,tp:'int',label:x.name+' ('+i.l+')',node:i,match:x.name.toLowerCase(),subIdx:idx,lvl:'Intermediary actor'});});
+  });
+  D.forEach(function(d){IDX.push({id:d.id,tp:'d',label:d.l,node:d,match:d.l.toLowerCase(),lvl:'Destination'});});
+
+  var srchEl=document.getElementById('srch');
+  var srdEl=document.getElementById('srd');
+  srchEl.oninput=function(){
+    var q=this.value.trim().toLowerCase();
+    srdEl.innerHTML='';
+    if(!q){srdEl.classList.remove('show');return;}
+    var hits=IDX.filter(function(x){return x.match.indexOf(q)>=0;}).slice(0,16);
+    if(!hits.length){srdEl.classList.remove('show');return;}
+    hits.forEach(function(h){
+      var el=document.createElement('div');
+      el.className='sri';
+      el.innerHTML='<span>'+h.label+'</span><span class="lvl">'+h.lvl+'</span>';
+      el.onclick=function(){
+        srdEl.classList.remove('show');srchEl.value=h.label;
+        sel(h.id,h.tp,h.node);
+        if(h.subIdx!==undefined){setTimeout(function(){shwSub(h.subIdx);},150);}
+      };
+      srdEl.appendChild(el);
+    });
+    srdEl.classList.add('show');
+  };
+  srchEl.onkeydown=function(e){if(e.key==='Escape'){srdEl.classList.remove('show');srchEl.value='';}};
+  document.addEventListener('click',function(e){if(!srchEl.contains(e.target)&&!srdEl.contains(e.target)){srdEl.classList.remove('show');}});
+  document.getElementById('rbtn').onclick=rst;
+  window.addEventListener('resize',function(){if(act&&atype){var c=gc(act,atype);setTimeout(function(){redraw(c);},60);}});
+
+  rndr();
+}
+
+init();
+</script>
+</body>
+</html>
